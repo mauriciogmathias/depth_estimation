@@ -6,39 +6,39 @@ import matplotlib.pyplot as plt
 import tensorflow as tf
 import tensorflow_hub as hub
 
-# Set TensorFlow threading options for CPU optimization
+#set tensorflow threading options for cpu optimization
 tf.config.threading.set_inter_op_parallelism_threads(4)
 tf.config.threading.set_intra_op_parallelism_threads(4)
 
 img = cv2.imread('test.jpg')
 img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB) / 255.0
 
-# Resize the image to the expected size (256x256) and prepare for input
+#resize the image to the expected size (256x256) and prepare for input
 img_resized = tf.image.resize(img, [256, 256], method='bicubic', preserve_aspect_ratio=False)
 
-# Change from HWC to CHW format
+#change from hwc to chw format
 img_resized = tf.transpose(img_resized, [2, 0, 1])  
 
-# Convert the tensor to a NumPy array
+#convert the tensor to a numpy array
 img_input = img_resized.numpy()  
 
-# Add batch dimension
+#add batch dimension
 img_input = img_input.reshape(1, 3, 256, 256)  
 tensor = tf.convert_to_tensor(img_input, dtype=tf.float32)
 
 module = hub.load("https://www.kaggle.com/models/intel/midas/TensorFlow1/v2-1-small/1", tags=['serve'])
 
-# Perform inference using the model
+#perform inference using the model
 output = module.signatures['serving_default'](tensor)
 
-# Convert the output to a NumPy array
+#convert the output to a numpy array
 prediction = output['default'].numpy()
 prediction = prediction.reshape(256, 256)
 
-# Resize the prediction back to the original image size
+#resize the prediction back to the original image size
 prediction = cv2.resize(prediction, (img.shape[1], img.shape[0]), interpolation=cv2.INTER_CUBIC)
 
-# Normalize the depth map for visualization
+#normalize the depth map for visualization
 depth_min = prediction.min()
 depth_max = prediction.max()
 img_out = (255 * (prediction - depth_min) / (depth_max - depth_min)).astype("uint8")
